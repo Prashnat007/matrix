@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Loan EMI Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .calculator {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            transition: all 0.3s ease;
+        }
+        .calculator:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        input[type="number"]:focus, select:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        #chart-container {
+            margin-top: 30px;
+            height: 300px;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .flex-item {
+            flex: 1 1 300px;
+            margin: 10px;
+        }
+        #amortization-schedule {
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Advanced Loan EMI Calculator</h2>
+        <div class="flex-container">
+            <div class="flex-item">
+                <div class="input-group">
+                    <label for="amount">Loan Amount (₹):</label>
+                    <input type="number" id="amount" placeholder="Enter loan amount" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="interest">Interest Rate (% per annum):</label>
+                    <input type="number" id="interest" placeholder="Enter interest rate" min="0" max="100" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label for="tenure">Loan Tenure:</label>
+                    <input type="number" id="tenure" placeholder="Enter loan tenure" min="1">
+                </div>
+                <div class="input-group">
+                    <label for="tenure-type">Tenure Type:</label>
+                    <select id="tenure-type">
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex-item">
+                <div class="input-group">
+                    <label for="start-date">Loan Start Date:</label>
+                    <input type="date" id="start-date">
+                </div>
+                <div class="input-group">
+                    <label for="processing-fee">Processing Fee (%):</label>
+                    <input type="number" id="processing-fee" placeholder="Enter processing fee" min="0" max="100" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label for="insurance">Loan Insurance (₹):</label>
+                    <input type="number" id="insurance" placeholder="Enter insurance amount" min="0">
+                </div>
+            </div>
+        </div>
+        <button onclick="calculateEMI()">Calculate EMI</button>
+        <div id="result"></div>
+        <div id="chart-container">
+            <canvas id="emiChart"></canvas>
+        </div>
+        <div id="amortization-schedule"></div>
+    </div>
+
+    <script>
+        let emiChart;
+
+        function calculateEMI() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const interestRate = parseFloat(document.getElementById('interest').value);
+            let tenure = parseFloat(document.getElementById('tenure').value);
+            const tenureType = document.getElementById('tenure-type').value;
+            const startDate = new Date(document.getElementById('start-date').value);
+            const processingFee = parseFloat(document.getElementById('processing-fee').value) || 0;
+            const insurance = parseFloat(document.getElementById('insurance').value) || 0;
+
+            if (tenureType === 'years') {
+                tenure *= 12;
+            }
+
+            const monthlyInterestRate = interestRate / 12 / 100;
+            const emi = amount * monthlyInterestRate * (Math.pow(1 + monthlyInterestRate, tenure) / (Math.pow(1 + monthlyInterestRate, tenure) - 1));
+            const totalAmount = emi * tenure;
+            const totalInterest = totalAmount - amount;
+            const processingFeeAmount = (processingFee / 100) * amount;
+            const totalCost = totalAmount + processingFeeAmount + insurance;
+
+            displayResults(emi, totalAmount, totalInterest, processingFeeAmount, insurance, totalCost);
+            updateChart(amount, totalInterest, processingFeeAmount, insurance);
+            generateAmortizationSchedule(amount, emi, monthlyInterestRate, tenure, startDate);
+        }
+
+        function displayResults(emi, totalAmount, totalInterest, processingFeeAmount, insurance, totalCost) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <h3>Loan Summary</h3>
+                <p>Monthly EMI: ₹${emi.toFixed(2)}</p>
+                <p>Total Amount Payable: ₹${totalAmount.toFixed(2)}</p>
+                <p>Total Interest: ₹${totalInterest.toFixed(2)}</p>
+                <p>Processing Fee: ₹${processingFeeAmount.toFixed(2)}</p>
+                <p>Insurance: ₹${insurance.toFixed(2)}</p>
+                <p>Total Cost of Loan: ₹${totalCost.toFixed(2)}</p>
+            `;
+            resultDiv.style.opacity = '1';
+        }
+
+        function updateChart(principal, interest, processingFee, insurance) {
+            const ctx = document.getElementById('emiChart').getContext('2d');
+            
+            if (emiChart) {
+                emiChart.destroy();
+            }
+
+            emiChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Principal', 'Interest', 'Processing Fee', 'Insurance'],
+                    datasets: [{
+                        data: [principal, interest, processingFee, insurance],
+                        backgroundColor: ['#4CAF50', '#FFA500', '#3498db', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Loan Breakdown'
+                    }
+                }
+            });
+        }
+
+        function generateAmortizationSchedule(principal, emi, monthlyInterestRate, tenure, startDate) {
+            let balance = principal;
+            let schedule = '<h3>Amortization Schedule</h3><table><tr><th>Month</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Balance</th></tr>';
+
+            for (let i = 1; i <= tenure; i++) {
+                const interest = balance * monthlyInterestRate;
+                const principalPaid = emi - interest;
+                balance -= principalPaid;
+
+                const paymentDate = new Date(startDate);
+                paymentDate.setMonth(startDate.getMonth() + i - 1);
+
+                schedule += `<tr>
+                    <td>${paymentDate.toLocaleDateString()}</td>
+                    <td>₹${emi.toFixed(2)}</td>
+                    <td>₹${principalPaid.toFixed(2)}</td>
+                    <td>₹${interest.toFixed(2)}</td>
+                    <td>₹${Math.max(0, balance).toFixed(2)}</td>
+                </tr>`;
+            }
+
+            schedule += '</table>';
+            document.getElementById('amortization-schedule').innerHTML = schedule;
+        }
+    </script>
+</body>
+</html>
