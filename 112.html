@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>उन्नत मैट्रिक्स कैलकुलेटर</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --background-color: #f0f0f0;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .matrix-input {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .matrix {
+            background-color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .matrix:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 60px;
+            height: 40px;
+            text-align: center;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 2px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        #result {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #e8f5e9;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #result.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            input {
+                width: 50px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        .dark-theme {
+            --background-color: #2c3e50;
+            --text-color: #ecf0f1;
+        }
+
+        .dark-theme .container {
+            background-color: #34495e;
+        }
+
+        .dark-theme .matrix {
+            background-color: #2c3e50;
+        }
+
+        .dark-theme input {
+            background-color: #34495e;
+            color: #ecf0f1;
+            border-color: #7f8c8d;
+        }
+
+        .dark-theme #result {
+            background-color: #2ecc71;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    <div class="container">
+        <h1>उन्नत मैट्रिक्स कैलकुलेटर</h1>
+        
+        <div id="matrixSize">
+            <label for="rows">पंक्तियाँ:</label>
+            <input type="number" id="rows" min="1" max="5" value="2">
+            <label for="cols">स्तंभ:</label>
+            <input type="number" id="cols" min="1" max="5" value="2">
+            <button onclick="createMatrices()">मैट्रिक्स बनाएँ</button>
+        </div>
+
+        <div class="matrix-input" id="matrixInputs"></div>
+
+        <div>
+            <button onclick="addMatrices()">जोड़ें</button>
+            <button onclick="subtractMatrices()">घटाएँ</button>
+            <button onclick="multiplyMatrices()">गुणा करें</button>
+            <button onclick="transposeMatrix('A')">A का ट्रांसपोज़</button>
+            <button onclick="transposeMatrix('B')">B का ट्रांसपोज़</button>
+            <button onclick="calculateDeterminant('A')">A का सारणिक</button>
+            <button onclick="calculateDeterminant('B')">B का सारणिक</button>
+            <button onclick="calculateInverse('A')">A का व्युत्क्रम</button>
+            <button onclick="calculateInverse('B')">B का व्युत्क्रम</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function createMatrices() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            let html = '';
+
+            for (let matrix of ['A', 'B']) {
+                html += `<div class="matrix"><h2>मैट्रिक्स ${matrix}</h2>`;
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        html += `<input type="number" id="${matrix}${i}${j}" step="0.1">`;
+                    }
+                    html += '<br>';
+                }
+                html += '</div>';
+            }
+
+            document.getElementById('matrixInputs').innerHTML = html;
+        }
+
+        function getMatrix(prefix) {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            let matrix = [];
+            for (let i = 0; i < rows; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    matrix[i][j] = Number(document.getElementById(prefix + i + j).value);
+                }
+            }
+            return matrix;
+        }
+
+        function displayResult(result, operation) {
+            let resultHTML = `<h3>परिणाम (${operation}):</h3>`;
+            for (let i = 0; i < result.length; i++) {
+                for (let j = 0; j < result[i].length; j++) {
+                    resultHTML += `<input type="text" value="${result[i][j].toFixed(2)}" readonly>`;
+                }
+                resultHTML += '<br>';
+            }
+            document.getElementById('result').innerHTML = resultHTML;
+            document.getElementById('result').classList.add('show');
+        }
+
+        function addMatrices() {
+            const a = getMatrix('A');
+            const b = getMatrix('B');
+            const result = a.map((row, i) => row.map((val, j) => val + b[i][j]));
+            displayResult(result, 'जोड़');
+        }
+
+        function subtractMatrices() {
+            const a = getMatrix('A');
+            const b = getMatrix('B');
+            const result = a.map((row, i) => row.map((val, j) => val - b[i][j]));
+            displayResult(result, 'घटाव');
+        }
+
+        function multiplyMatrices() {
+            const a = getMatrix('A');
+            const b = getMatrix('B');
+            if (a[0].length !== b.length) {
+                alert('मैट्रिक्स गुणा के लिए अमान्य आकार');
+                return;
+            }
+            const result = a.map(row => b[0].map((_, i) => row.reduce((sum, cell, j) => sum + cell * b[j][i], 0)));
+            displayResult(result, 'गुणा');
+        }
+
+        function transposeMatrix(matrixName) {
+            const matrix = getMatrix(matrixName);
+            const result = matrix[0].map((_, i) => matrix.map(row => row[i]));
+            displayResult(result, `${matrixName} का ट्रांसपोज़`);
+        }
+
+        function calculateDeterminant(matrixName) {
+            const matrix = getMatrix(matrixName);
+            if (matrix.length !== matrix[0].length) {
+                alert('सारणिक केवल वर्ग मैट्रिक्स के लिए परिभाषित है');
+                return;
+            }
+            const det = determinant(matrix);
+            document.getElementById('result').innerHTML = `<h3>${matrixName} का सारणिक: ${det.toFixed(2)}</h3>`;
+            document.getElementById('result').classList.add('show');
+        }
+
+        function determinant(matrix) {
+            if (matrix.length === 2) {
+                return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+            }
+            let det = 0;
+            for (let i = 0; i < matrix.length; i++) {
+                det += Math.pow(-1, i) * matrix[0][i] * determinant(minor(matrix, 0, i));
+            }
+            return det;
+        }
+
+        function minor(matrix, row, col) {
+            return matrix.filter((_, i) => i !== row).map(row => row.filter((_, j) => j !== col));
+        }
+
+        function calculateInverse(matrixName) {
+            const matrix = getMatrix(matrixName);
+            if (matrix.length !== matrix[0].length) {
+                alert('व्युत्क्रम केवल वर्ग मैट्रिक्स के लिए परिभाषित है');
+                return;
+            }
+            const det = determinant(matrix);
+            if (det === 0) {
+                alert('मैट्रिक्स का व्युत्क्रम मौजूद नहीं है');
+                return;
+            }
+            const adjugate = matrix.map((row, i) => row.map((_, j) => Math.pow(-1, i + j) * determinant(minor(matrix, j, i))));
+            const inverse = adjugate.map(row => row.map(val => val / det));
+            displayResult(inverse, `${matrixName} का व्युत्क्रम`);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+        }
+
+        // Initialize with 2x2 matrices
+        createMatrices();
+    </script>
+</body>
+</html>
